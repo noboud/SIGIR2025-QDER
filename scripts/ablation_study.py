@@ -33,7 +33,6 @@ from src.evaluation.metrics import get_metric
 from src.utils.io_utils import save_json, load_json
 from src.evaluation.ranking_utils import save_trec_run
 from src.utils.common_utils import setup_logging, get_device
-from src.utils.arg_parsers import add_training_args, add_model_args
 
 
 class AblationStudy:
@@ -404,35 +403,7 @@ class AblationStudy:
 
 def create_config_from_args(args) -> Dict:
     """Create configuration dictionary from command line arguments."""
-    config = {
-        # Data paths
-        'train_data': args.train_data,
-        'val_data': args.val_data,
-        'qrels_path': args.qrels,
-        'tfidf_weights_path': args.tfidf_weights,
-
-        # Model configuration
-        'pretrained_model': args.pretrained_model,
-        'use_scores': args.use_scores,
-        'use_entities': args.use_entities,
-        'score_method': args.score_method,
-        'max_length': args.max_length,
-
-        # Training configuration
-        'batch_size': args.batch_size,
-        'epochs': args.epochs,
-        'learning_rate': args.learning_rate,
-        'weight_decay': args.weight_decay,
-        'warmup_steps': args.warmup_steps,
-        'eval_every': args.eval_every,
-
-        # System configuration
-        'device': args.device,
-        'num_workers': args.num_workers,
-        'output_dir': args.output_dir,
-    }
-
-    return config
+    return vars(args)
 
 
 def main():
@@ -442,56 +413,40 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    # Data arguments
-    parser.add_argument('--train-data', required=True,
-                        help='Path to training data file')
-    parser.add_argument('--val-data', required=True,
-                        help='Path to validation data file')
-    parser.add_argument('--qrels', required=True,
-                        help='Path to qrels file for evaluation')
-    parser.add_argument('--tfidf-weights', default=None,
-                        help='Path to TF-IDF weights file')
+    # --- Data Arguments ---
+    data_group = parser.add_argument_group('Data Arguments')
+    data_group.add_argument('--train-data', type=str, required=True, help='Path to training data file')
+    data_group.add_argument('--val-data', type=str, required=True, help='Path to validation data file')
+    data_group.add_argument('--qrels', type=str, required=True, help='Path to qrels file for evaluation')
+    data_group.add_argument('--tfidf-weights', type=str, default=None, help='Path to TF-IDF weights file')
 
-    # Model arguments
-    add_model_args(parser)
-    parser.add_argument('--pretrained-model', default='bert-base-uncased',
-                        help='Pretrained model name')
-    parser.add_argument('--max-length', type=int, default=512,
-                        help='Maximum sequence length')
-    parser.add_argument('--use-scores', action='store_true',
-                        help='Use retrieval scores in model')
-    parser.add_argument('--use-entities', action='store_true',
-                        help='Use entity embeddings in model')
-    parser.add_argument('--score-method', choices=['linear', 'bilinear'],
-                        default='bilinear', help='Scoring method')
+    # --- Model Arguments ---
+    model_group = parser.add_argument_group('Model Arguments')
+    model_group.add_argument('--pretrained-model', type=str, default='bert-base-uncased', help='Pretrained model name from Hugging Face')
+    model_group.add_argument('--max-length', type=int, default=512, help='Maximum sequence length')
+    model_group.add_argument('--use-scores', action='store_true', help='Use retrieval scores in model')
+    model_group.add_argument('--use-entities', action='store_true', help='Use entity embeddings in model')
+    model_group.add_argument('--score-method', type=str, choices=['linear', 'bilinear'], default='bilinear', help='Scoring method')
 
-    # Training arguments
-    add_training_args(parser)
-    parser.add_argument('--epochs', type=int, default=5,
-                        help='Number of training epochs')
-    parser.add_argument('--batch-size', type=int, default=32,
-                        help='Training batch size')
-    parser.add_argument('--learning-rate', type=float, default=2e-5,
-                        help='Learning rate')
-    parser.add_argument('--weight-decay', type=float, default=0.01,
-                        help='Weight decay')
-    parser.add_argument('--warmup-steps', type=int, default=1000,
-                        help='Warmup steps for scheduler')
-    parser.add_argument('--eval-every', type=int, default=1,
-                        help='Evaluate every N epochs')
+    # --- Training Arguments ---
+    training_group = parser.add_argument_group('Training Arguments')
+    training_group.add_argument('--epochs', type=int, default=5, help='Number of training epochs')
+    training_group.add_argument('--batch-size', type=int, default=32, help='Training batch size')
+    training_group.add_argument('--learning-rate', type=float, default=2e-5, help='Learning rate')
+    training_group.add_argument('--weight-decay', type=float, default=0.01, help='Weight decay for optimizer')
+    training_group.add_argument('--warmup-steps', type=int, default=1000, help='Warmup steps for scheduler')
+    training_group.add_argument('--eval-every', type=int, default=1, help='Evaluate on validation set every N epochs')
+    training_group.add_argument('--gradient-clip-norm', type=float, default=1.0, help='Gradient clipping norm value')
 
-    # System arguments
-    add_general_args(parser)
-    parser.add_argument('--device', default='cuda',
-                        help='Device to use (cuda/cpu)')
-    parser.add_argument('--num-workers', type=int, default=0,
-                        help='Number of data loader workers')
-    parser.add_argument('--output-dir', required=True,
-                        help='Output directory for results')
+    # --- System Arguments ---
+    system_group = parser.add_argument_group('System Arguments')
+    system_group.add_argument('--device', type=str, default='cuda', help='Device to use for training (e.g., "cuda", "cpu")')
+    system_group.add_argument('--num-workers', type=int, default=0, help='Number of data loader workers')
+    system_group.add_argument('--output-dir', type=str, required=True, help='Output directory for saving models, logs, and results')
 
     args = parser.parse_args()
 
-    # Create configuration
+    # Create configuration from args
     config = create_config_from_args(args)
 
     # Initialize and run ablation study
