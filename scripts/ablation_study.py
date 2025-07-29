@@ -24,15 +24,16 @@ import pandas as pd
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.models.qder_ablation import CADR2Ablation
-from src.data.dataset import MaxSimDataset
-from src.data.dataloader import MaxSimDataLoader
-from src.training.trainer import Trainer
-from src.evaluation.evaluator import evaluate_model
+from src.models.qder_ablation import QDERAblation
+from src.data.dataset import QDERDataset
+from src.data.dataloader import QDERDataLoader
+from src.training.trainer import QDERTrainer
+from src.evaluation.evaluator import QDERModelEvaluator
 from src.evaluation.metrics import get_metric
-from src.utils.io_utils import save_json, load_json, save_trec_run
+from src.utils.io_utils import save_json, load_json
+from src.evaluation.ranking_utils import save_trec_run
 from src.utils.common_utils import setup_logging, get_device
-from src.utils.arg_parsers import add_common_args, add_training_args, add_model_args
+from src.utils.arg_parsers import add_training_args, add_model_args
 
 
 class AblationStudy:
