@@ -6,18 +6,16 @@ Supports model evaluation and TREC run generation.
 
 import os
 import torch
-import argparse
-from pathlib import Path
 
 # Import from src modules
-from src.models.model_factory import create_model_from_config, load_model_from_checkpoint
+from src.models.model_factory import load_model_from_checkpoint, create_model
 from src.data.dataset import QDERDataset
 from src.data.dataloader import QDERDataLoader
 from src.evaluation.evaluator import QDERModelEvaluator
 from src.evaluation.metrics import get_metric, compute_ranking_metrics
 from src.evaluation.ranking_utils import save_trec_run, validate_run_file
-from src.utils.io_utils import load_checkpoint, ensure_dir_exists
-from src.utils.common_utils import get_device, setup_logging, count_parameters
+from src.utils.io_utils import ensure_dir_exists
+from src.utils.common_utils import get_device, count_parameters
 from src.utils.arg_parsers import create_evaluation_parser, setup_args_and_logging
 
 
@@ -90,7 +88,7 @@ def create_test_dataset(args, tokenizer):
 
 def create_test_loader(test_dataset, args):
     """Create test data loader."""
-    eval_batch_size = getattr(args, 'eval_batch_size', args.batch_size)
+    eval_batch_size = getattr(args, 'eval_batch_size', getattr(args, 'batch_size'))
 
     test_loader = QDERDataLoader(
         dataset=test_dataset,
