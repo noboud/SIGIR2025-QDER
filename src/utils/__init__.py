@@ -32,7 +32,8 @@ from .common_utils import (
     print_model_summary,
     tensor_to_list,
     list_to_tensor,
-    safe_divide
+    safe_divide,
+    setup_logging
 )
 
 from .arg_parsers import (
@@ -59,6 +60,7 @@ __all__ = [
     'read_jsonl',
     'read_tsv_to_dict',
     'ensure_dir_exists',
+    'setup_logging',
 
     # Common utilities
     'count_parameters',

@@ -6,13 +6,13 @@ Contains your original utils.py save_trec function and related utilities.
 
 import os
 import collections
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def save_trec_run(run_file: str, results_dict: Dict[str, Dict[str, List[float]]]) -> None:
+def save_trec_run(run_file: str, results_dict: Dict[str, Dict[str, List[float]]], run_name: str = "QDER") -> None:
     """
     Save results in TREC run format.
 
@@ -21,6 +21,7 @@ def save_trec_run(run_file: str, results_dict: Dict[str, Dict[str, List[float]]]
     Args:
         run_file: Path to output run file
         results_dict: Dictionary with query_id -> {doc_id: [score, label]} mapping
+        run_name: Name given for the run
     """
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(run_file), exist_ok=True)
@@ -33,7 +34,7 @@ def save_trec_run(run_file: str, results_dict: Dict[str, Dict[str, List[float]]]
             for rank, (doc_id, score_label) in enumerate(sorted_docs, 1):
                 score = score_label[0]  # Extract score
                 # TREC format: query_id Q0 doc_id rank score run_id
-                writer.write(f'{query_id} Q0 {doc_id} {rank} {score} QDER\n')
+                writer.write(f'{query_id} Q0 {doc_id} {rank} {score} {run_name}\n')
 
     logger.info(f"TREC run file saved to {run_file}")
 
