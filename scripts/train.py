@@ -8,6 +8,8 @@ import os
 import time
 import json
 import torch
+import torch.nn as nn
+import argparse
 import collections
 from tqdm import tqdm
 from transformers import get_linear_schedule_with_warmup
@@ -18,6 +20,7 @@ from src.data.dataset import QDERDataset
 from src.data.dataloader import QDERDataLoader
 from src.training.trainer import QDERTrainer
 from src.training.loss_functions import get_loss_function
+from src.training.schedulers import get_scheduler
 from src.training.training_utils import (
     EarlyStopping, ModelCheckpoint, TrainingLogger,
     set_seed, get_device, count_parameters
@@ -25,7 +28,7 @@ from src.training.training_utils import (
 from src.evaluation.evaluator import QDERModelEvaluator
 from src.evaluation.metrics import get_metric
 from src.utils.io_utils import save_checkpoint, check_dir
-from src.utils.common_utils import epoch_time
+from src.utils.common_utils import epoch_time, setup_logging
 from src.utils.arg_parsers import create_training_parser, setup_args_and_logging
 
 
@@ -256,7 +259,7 @@ def main():
     set_seed(args.seed)
 
     # Setup device
-    device = get_device(args.cuda)
+    device = get_device(args.cuda, args.use_cuda)
 
     # Create output directory
     check_dir(args.output_dir)
@@ -295,7 +298,7 @@ def main():
         if hasattr(args, 'resume') and args.resume:
             print(f"Resuming from checkpoint: {args.resume}")
             from src.utils.io_utils import load_checkpoint
-            load_checkpoint(args.resume, model, device=str(device))
+            load_checkpoint(args.resume, model, device=device)
 
         # Train model
         best_metric = train_model(model, train_loader, val_loader, args, device)
