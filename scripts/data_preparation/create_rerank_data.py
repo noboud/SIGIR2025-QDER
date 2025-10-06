@@ -81,12 +81,13 @@ class DocumentProcessor:
         logger.info(f'Loaded {len(embeddings)} embeddings')
         return embeddings, not_found
 
-    def load_docs(self, docs_file: str) -> Dict[str, Tuple[List[str], str]]:
+    def load_docs(self, docs_file: str, unique_entities: bool=False) -> Dict[str, Tuple[List[str], str]]:
         """
         Load documents with entity annotations.
 
         Args:
             docs_file: Path to documents JSONL file
+            unique_entities: Whether to filter out duplicate entities per document
 
         Returns:
             Dictionary mapping doc_id to (entities, text)
@@ -99,7 +100,8 @@ class DocumentProcessor:
                 for line in tqdm(f, desc="Loading documents"):
                     try:
                         doc_data = json.loads(line.strip())
-                        docs[doc_data['doc_id']] = (doc_data['entities'], doc_data['text'])
+                        entities = list(set(doc_data['entities'])) if unique_entities else doc_data['entities']
+                        docs[doc_data['doc_id']] = (entities, doc_data['text'])
                     except (json.JSONDecodeError, KeyError) as e:
                         logger.warning(f"Skipping malformed document: {e}")
                         continue
@@ -394,6 +396,7 @@ def main():
     # Experimentation
     parser.add_argument("--folds", type=str)
     parser.add_argument("--fold-index", type=int)
+    parser.add_argument("--unique-entities", action='store_true')
 
     args = parser.parse_args()
 
@@ -402,6 +405,9 @@ def main():
 
     logger.info(f"Creating {'training' if args.train else 'test'} data")
     logger.info(f"Data will be {'balanced' if args.balance else 'unbalanced'}")
+
+    if args.unique_entities:
+        logger.info(f"Data will only have unique entities per document")
 
     if args.folds and args.fold_index is None:
         logger.error(f"Folds given without index, ignoring folds...")
@@ -433,7 +439,7 @@ def main():
         testing=not args.train
     ) if args.folds and not args.fold_index is None else []
     queries = creator.load_queries(args.queries, fold_queries=fold_queries)
-    docs = processor.load_docs(args.docs)
+    docs = processor.load_docs(args.docs, args.unique_entities)
     qrels = creator.read_qrels(args.qrels)
     doc_run = creator.read_run(args.doc_run)
     entity_run = creator.read_run(args.entity_run)
