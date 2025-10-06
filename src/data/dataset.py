@@ -185,8 +185,16 @@ class QDERDataset(Dataset):
         label = torch.tensor([item['label'] for item in batch], dtype=torch.float)
 
         # Handle entity embeddings - pad sequences since they can have different lengths
-        query_entity_emb_list = [torch.tensor(item['query_entity_emb']) if item['query_entity_emb'] else torch.empty(0, 300) for item in batch]
-        doc_entity_emb_list = [torch.tensor(item['doc_entity_emb']) if item['doc_entity_emb'] else torch.empty(0, 300) for item in batch]
+        query_entity_emb_list = [
+            torch.tensor([e['embedding'] for e in item['query_ent_emb']])
+            if item.get('query_ent_emb') else torch.empty((0, 300))
+            for item in batch
+        ]
+        doc_entity_emb_list = [
+            torch.tensor([e['embedding'] for e in item['doc_ent_emb']])
+            if item.get('doc_ent_emb') else torch.empty((0, 300))
+            for item in batch
+        ]
 
         # Pad entity embeddings
         if all(len(emb) > 0 for emb in query_entity_emb_list):

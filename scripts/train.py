@@ -171,7 +171,7 @@ def train_model(model, train_loader, val_loader, args, device):
 
     print(f"Starting training for {args.epochs} epochs")
     print(f"Device: {device}")
-    print(f"Model parameters: {count_parameters(model):,}")
+    print(f"Model parameters: {count_parameters(model)['total_parameters']:,}")
 
     # Training loop
     best_metric = float('inf')
