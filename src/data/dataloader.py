@@ -45,8 +45,6 @@ class QDERDataLoader(DataLoader):
             pin_memory=pin_memory
         )
 
-        self.dataset = dataset
-
     def get_dataset_info(self) -> dict:
         """
         Get information about the underlying dataset.
