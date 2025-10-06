@@ -8,6 +8,7 @@ query-document pairs with relevance labels for training QDER models.
 
 import sys
 import os
+from statistics import mean
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
@@ -168,7 +169,6 @@ class DocumentProcessor:
             Dictionary mapping doc_id to (text, score, entity_embeddings)
         """
         results = {}
-
         for doc_id in query_docs:
             if doc_id not in docs or doc_id not in doc_scores:
                 continue
@@ -238,7 +238,16 @@ class DataCreator:
         return run
 
     @staticmethod
-    def load_queries(queries_file: str) -> Dict[str, str]:
+    def load_fold_queries(fold_file: str, fold: int, testing: bool=False):
+        if fold_file:
+            with open(fold_file, 'r') as f:
+                fold = json.load(f)[str(fold)]
+                return fold["testing"] if testing else fold["training"]
+        else:
+            return []
+
+    @staticmethod
+    def load_queries(queries_file: str, fold_queries: list[str]=None) -> Dict[str, str]:
         """Load queries from TSV file."""
         queries = {}
 
@@ -246,6 +255,8 @@ class DataCreator:
             for line in f:
                 try:
                     query_id, query_text = line.strip().split('\t', 1)
+                    if fold_queries and not str(query_id) in fold_queries:
+                        continue
                     queries[query_id] = query_text
                 except ValueError:
                     logger.warning(f"Skipping malformed query line: {line.strip()}")
@@ -285,6 +296,7 @@ class DataCreator:
         """
         ensure_dir_exists(save_path)
         examples_count = 0
+        positives_lengths = []
 
         with open(save_path, 'w') as f:
             for query_id, query_text in tqdm(queries.items(), desc="Processing queries"):
@@ -311,6 +323,8 @@ class DataCreator:
                     docs, qrels, query_entities, entity_info,
                     True, doc_source, query_docs
                 )
+
+                positives_lengths.append(len(pos_docs))
 
                 neg_docs = self.processor.get_docs_by_relevance(
                     docs, qrels, query_entities, entity_info,
@@ -340,6 +354,10 @@ class DataCreator:
                         json.dump(data_point, f, ensure_ascii=False)
                         f.write('\n')
                         examples_count += 1
+
+        positives_count = collections.Counter(positives_lengths)
+        positives_string = "\n".join([f"{cnt}x {key}" for key, cnt in positives_count.most_common()])
+        logger.debug(f'Positives per query (as a counter) (mean: {mean(positives_lengths)}, min: {min(positives_lengths)}, max: {max(positives_lengths)}):\n{positives_string}')
 
         logger.info(f'Created {examples_count} examples')
         return examples_count
@@ -373,6 +391,10 @@ def main():
     # Logging
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
 
+    # Experimentation
+    parser.add_argument("--folds", type=str)
+    parser.add_argument("--fold-index", type=int)
+
     args = parser.parse_args()
 
     # Setup logging
@@ -380,6 +402,9 @@ def main():
 
     logger.info(f"Creating {'training' if args.train else 'test'} data")
     logger.info(f"Data will be {'balanced' if args.balance else 'unbalanced'}")
+
+    if args.folds and args.fold_index is None:
+        logger.error(f"Folds given without index, ignoring folds...")
 
     # Initialize components
     processor = DocumentProcessor(embedding_dim=args.embedding_dim)
@@ -402,7 +427,12 @@ def main():
     # Load all required data
     logger.info("Loading data files...")
 
-    queries = creator.load_queries(args.queries)
+    fold_queries = creator.load_fold_queries(
+        args.folds,
+        args.fold_index,
+        testing=not args.train
+    ) if args.folds and not args.fold_index is None else []
+    queries = creator.load_queries(args.queries, fold_queries=fold_queries)
     docs = processor.load_docs(args.docs)
     qrels = creator.read_qrels(args.qrels)
     doc_run = creator.read_run(args.doc_run)

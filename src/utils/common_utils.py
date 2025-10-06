@@ -636,7 +636,8 @@ def setup_logging(log_level: str = "INFO",
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=handlers
+        handlers=handlers,
+        force=True
     )
 
     logger.info(f"Logging setup complete (level: {log_level})")
