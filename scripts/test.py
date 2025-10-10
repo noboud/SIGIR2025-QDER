@@ -88,7 +88,7 @@ def create_test_dataset(args, tokenizer):
 
 def create_test_loader(test_dataset, args):
     """Create test data loader."""
-    eval_batch_size = getattr(args, 'eval_batch_size', getattr(args, 'batch_size'))
+    eval_batch_size = getattr(args, 'eval_batch_size', getattr(args, 'batch_size', 20))
 
     test_loader = QDERDataLoader(
         dataset=test_dataset,

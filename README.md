@@ -1,6 +1,6 @@
 # QDER: Query-Specific Document and Entity Representations for Multi-Vector Document Re-Ranking
 
-📄 Shubham Chatterjee and Jeff Dalton. 2025. [DREQ: Document Re-Ranking Using Entity-based Query Understanding](https://dl.acm.org/doi/10.1145/3726302.3730065). In _Proceedings of the 48th International ACM SIGIR Conference on Research and
+📄 Shubham Chatterjee and Jeff Dalton. 2025. [QDER: Query-Specific Document and Entity Representations for Multi-Vector Document Re-Ranking](https://dl.acm.org/doi/10.1145/3726302.3730065). In _Proceedings of the 48th International ACM SIGIR Conference on Research and
 Development in Information Retrieval (SIGIR ’25)._ 
 
 This repository contains the code associated with this paper and the instructions on how to execute the code. For detailed instructions on how to run the code, read the documentation (**_detailed documentation with data release coming soon!_**). 
